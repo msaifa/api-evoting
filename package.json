@@ -21,15 +21,16 @@
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.33",
     "morgan": "^1.10.0",
-    "mysql": "^2.18.1"
-  },
-  "devDependencies": {
+    "mysql": "^2.18.1",
     "@babel/cli": "^7.8.4",
     "@babel/core": "^7.8.6",
     "@babel/plugin-transform-runtime": "^7.8.3",
     "@babel/preset-env": "^7.8.6",
     "@babel/register": "^7.8.6",
     "nodemon": "^2.0.2"
+  },
+  "devDependencies": {
+    
   },
   "engines": {
     "node": "16.x"
