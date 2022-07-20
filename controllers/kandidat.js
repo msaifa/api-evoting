@@ -6,22 +6,43 @@ let sql = "" ;
 let par = [] ;
 let resDB= false ;
 
-router.post('/suara-terbanyak', async (req, res, next) => {
-
-    const { 
-        perid
-    } = req.body
-
-    //validasi email
+const getPeriodeByDate = async (tanggal) => {
     const validatePeriode = await dbQueryAll({
-        sql: `SELECT perid FROM periode where perid = ? and perstatus = 1`,
-        params: [perid]
+        sql: `select perid from 
+                periode p 
+                where ? between permulai and perselesai`,
+        params: [tanggal]
     })
 
     if (validatePeriode.length == 0){
+        return false;
+    } else {
+        return validatePeriode[0].perid
+    }
+}
+
+const compare = ( a, b ) => {
+    if ( a.total < b.total ){
+      return 1;
+    }
+    if ( a.total > b.total ){
+      return -1;
+    }
+    return 0;
+  }
+
+router.post('/suara-terbanyak', async (req, res, next) => {
+
+    const { 
+        tanggal
+    } = req.body
+
+    const perid = await getPeriodeByDate(tanggal)
+
+    if (!perid){
         res.send({
             status: 400,
-            message:"Periode yang dipilih sudah tidak aktif."
+            message:"Tidak ada periode aktif untuk saat ini."
         })
         return;
     }
@@ -103,14 +124,23 @@ router.post('/pilih', async (req, res, next) => {
     return;
 });
 
-router.get('/get-all/:pages', async (req, res, next) => {
+router.post('/get-all', async (req, res, next) => {
+
+    /*
+        1. ambil periode aktif saat ini
+        2. ambil periode sebelumnya, dan jumlah pemenang di masing2 kota
+        3. mengambil pemenang sesuai jumlah pemang dari periode nya
+        4. insert pemenang nya pada tabel calon yang akan dipilih untuk periode saat ini
+        5. ambil data calon sesuai periode saat ini
+    */
 
     const { 
-        pages
-    } = req.params
-
+        pages,
+        tanggal
+    } = req.body
     const limit = 15;
-
+    let dataKandidat = [];
+    
     if (pages == 0 || !pages || pages == ""){
         res.send({
             status: 400,
@@ -118,18 +148,80 @@ router.get('/get-all/:pages', async (req, res, next) => {
         })
         return;
     }
-    
-    //validasi email
-    const dataKandidat = await dbQueryAll({
-        sql: `SELECT kanid,kannama,kanttl,kanalamat,kanagama,kanpekerjaan,kanhp,kanemail,kanfoto,kanasalkota 
-                from kandidat order by kanid asc limit ? offset ?`,
-        params: [limit, (pages-1)*limit]
+
+    const currentPeriodeID = await getPeriodeByDate(tanggal)
+    const prevPeriode = await dbQueryOne({
+        sql: `select perid, perjumkabkediri, perjumkotkediri, perjumnganjuk  
+                from periode p 
+                where perselesai < (select permulai from periode where perid = ?)
+                order by perselesai desc 
+                limit 1`,
+        params: [currentPeriodeID]
     })
+
+    if (!prevPeriode){
+        // jika belum pernah dilakukan voting, maka ambil semua
+        dataKandidat = await dbQueryAll({
+            sql: `SELECT kanid,kannama,kanttl,kanalamat,kanagama,kanpekerjaan,kanhp,kanemail,kanfoto,kanasalkota 
+                    from kandidat order by kanid asc limit ? offset ?`,
+            params: [limit, (pages-1)*limit]
+        })
+    } else {
+        // jika sudah pernah melakukan voting, mengambil kandidat dari hasil voting sebelumnya
+        // ambil data dari kota kab kediri
+        const dataKabKediri = await dbQueryAll({
+            sql: `SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                    k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid 
+                    where kanasalkota = 'Kab. Kediri'
+                    group by v.kanid, v.perid
+                    order by total desc
+                    limit ?`,
+            params: [prevPeriode.perjumkabkediri]
+        })
+
+        // ambil data dari kota kab kediri
+        const dataKotKediri = await dbQueryAll({
+            sql: `SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                    k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid 
+                    where kanasalkota = 'Kota Kediri'
+                    group by v.kanid, v.perid
+                    order by total desc
+                    limit ?`,
+            params: [prevPeriode.perjumkotkediri]
+        })
+
+        // ambil data dari kota kab kediri
+        const dataNganjuk = await dbQueryAll({
+            sql: `SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                    k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid 
+                    where kanasalkota = 'Kab. Nganjuk'
+                    group by v.kanid, v.perid
+                    order by total desc
+                    limit ?`,
+            params: [prevPeriode.perjumnganjuk]
+        })
+
+        dataKandidat = [
+            ...dataKabKediri,
+            ...dataKotKediri,
+            ...dataNganjuk
+        ]
+
+        // tinggal sortingnya bor
+        dataKandidat.sort(compare)
+    }
 
     res.send({
         status: 200,
-        message:"Berhasil mengambil data suara terbanyak.",
-        data: dataKandidat
+        message:"Berhasil mengambil data kandidat.",
+        data: dataKandidat,
+        prevPeriode
     })
     return;
 });

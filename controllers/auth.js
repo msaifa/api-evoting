@@ -39,13 +39,13 @@ router.post('/login-adm', async (req, res, next) => {
 router.post('/login', async (req, res, next) => {
 
     const { 
-        email, 
-        password
+        usnohp, 
+        uspassword
     } = req.body
 
     const validateLogin = await dbQueryOne({
-        sql: `SELECT usid,usnama,usemail,usnohp,ususername,usstatus from user where usemail = ? and uspassword = ?`,
-        params: [email, password]
+        sql: `SELECT adid, adnama, ademail, adusername, adpassword, adsatus FROM admin WHERE usnohp = ? and adpassword = ?`,
+        params: [usnohp, uspassword]
     })
 
     if (!validateLogin){
@@ -58,7 +58,7 @@ router.post('/login', async (req, res, next) => {
 
     res.send({
         status: 200,
-        message:"Success Login",
+        message:"Login Berhasil",
         data: {
             user: validateLogin
         }

@@ -9,18 +9,18 @@ let resDB= false ;
 router.put('/profil', async (req, res, next) => {
 
     const { 
-        nama,
-        email,
-        nohp,
-        foto,
+        usnama,
+        usemail,
+        usnohp,
+        usfoto,
         usid,
-        password
+        uspassword
     } = req.body
 
     //validasi email
     const validateEmail = await dbQueryAll({
         sql: `SELECT usid from user where usemail = ? and usid != ?`,
-        params: [email, usid]
+        params: [usemail, usid]
     })
 
     if (validateEmail.length > 0){
@@ -33,14 +33,16 @@ router.put('/profil', async (req, res, next) => {
 
     const updateQuery = await dbQueryAll({
         sql: `UPDATE user SET usnama = ?, usemail = ?, usnohp = ?, usfoto = ? where usid = ?`,
-        params: [nama, email, nohp, foto, usid]
+        params: [usnama, usemail, usnohp, usfoto, usid]
     })
     
     // check apakah password diganti juga
-    const updatePassword = await dbQueryAll({
-        sql: `UPDATE user SET uspassword = ? where usid = ?`,
-        params: [password, usid]
-    })
+    if (password != ""){
+        const updatePassword = await dbQueryAll({
+            sql: `UPDATE user SET uspassword = ? where usid = ?`,
+            params: [uspassword, usid]
+        })
+    }
 
     res.send({
         status: updateQuery ? 200 : 400,

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon --exec node ./bin/www"
+    "start": "node ./bin/www",
+    "ngetes": "nodemon --exec node ./bin/www"
   },
   "dependencies": {
     "@babel/runtime": "^7.8.4",
@@ -29,5 +30,8 @@
     "@babel/preset-env": "^7.8.6",
     "@babel/register": "^7.8.6",
     "nodemon": "^2.0.2"
+  },
+  "engines": {
+    "node": "16.x"
   }
 }
