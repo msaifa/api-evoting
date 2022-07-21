@@ -69,11 +69,24 @@ router.post('/login', async (req, res, next) => {
 router.post('/register', async (req, res, next) => {
 
     const { 
-        nama,
-        email,
-        nohp,
-        password
+        usnama,
+        usemail,
+        usnohp,
+        uspassword
     } = req.body
+
+    if (
+        usnama == "" ||
+        usemail == "" ||
+        usnohp == "" ||
+        uspassword == ""        
+    ){
+        res.send({
+            status: 400,
+            message:"Terdapat form yang kosong. Silakan dicek kembali untuk melengkapi semua form."
+        })
+        return;
+    }
 
     //validasi email
     const validateEmail = await dbQueryAll({
@@ -92,11 +105,11 @@ router.post('/register', async (req, res, next) => {
     const result = await dbInsert({
         table: `user`,
         data: {
-            usnama: nama,
-            usemail: email,
-            usnohp: nohp,
+            usnama,
+            usemail,
+            usnohp,
             ususername: '',
-            uspassword: password           
+            uspassword
         }
     })
 
