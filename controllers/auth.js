@@ -91,13 +91,27 @@ router.post('/register', async (req, res, next) => {
     //validasi email
     const validateEmail = await dbQueryAll({
         sql: `SELECT usid from user where usemail = ?`,
-        params: [email]
+        params: [usemail]
     })
 
     if (validateEmail.length > 0){
         res.send({
             status: 400,
             message:"Email telah digunakan. Silahkan mencoba mendaftar menggunakan email yang lain."
+        })
+        return;
+    }
+
+    //validasi email
+    const validateNohp = await dbQueryAll({
+        sql: `SELECT usid from user where usnohp = ?`,
+        params: [usnohp]
+    })
+
+    if (validateNohp.length > 0){
+        res.send({
+            status: 400,
+            message:"No Hp telah digunakan. Silahkan mencoba mendaftar menggunakan email yang lain."
         })
         return;
     }
