@@ -37,7 +37,7 @@ router.put('/profil', async (req, res, next) => {
     })
     
     // check apakah password diganti juga
-    if (password != ""){
+    if (uspassword != ""){
         const updatePassword = await dbQueryAll({
             sql: `UPDATE user SET uspassword = ? where usid = ?`,
             params: [uspassword, usid]
