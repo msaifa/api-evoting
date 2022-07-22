@@ -63,7 +63,7 @@ router.post('/load', async (req, res, next) => {
     } = req.body
 
     const data = await dbQueryOne({
-        sql: `SELECT perid, pernama, permulai, perselesai, perstatus,perjumkabkediri, perjumkotkediri, perjumnganjuk
+        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%Y-%m-%d %H:%i:%S') as permulai, DATE_FORMAT(perselesai, '%Y-%m-%d %H:%i:%S') as perselesai, perstatus,perjumkabkediri, perjumkotkediri, perjumnganjuk
                 FROM periode 
                 where perid = ?`,
         params: [perid]

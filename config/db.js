@@ -7,7 +7,7 @@ const dbPusat = mysql.createConnection({
   user     : process.env.USER,
   password : process.env.PASS,
   database : process.env.DB01,
-  timezone: 'utc'
+  timezone: 'Z'
 })
 
 console.log("connected")
