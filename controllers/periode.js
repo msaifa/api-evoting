@@ -1,5 +1,5 @@
 import express from 'express'
-import { dbQueryAll, dbQueryOne } from '../config/db';
+import { dbExec, dbInsert, dbQueryAll, dbQueryOne } from '../config/db';
 
 var router = express.Router();
 let sql = "" ;
@@ -52,6 +52,155 @@ router.get('/get-all/:pages', async (req, res, next) => {
     res.send({
         status: 200,
         data
+    })
+    return;
+});
+
+router.post('/load', async (req, res, next) => {
+
+    const { 
+        perid
+    } = req.body
+
+    const data = await dbQueryOne({
+        sql: `SELECT perid, pernama, permulai, perselesai, perstatus,perjumkabkediri, perjumkotkediri, perjumnganjuk
+                FROM periode 
+                where perid = ?`,
+        params: [perid]
+    })
+
+    res.send({
+        status: 200,
+        data
+    })
+    return;
+});
+
+router.post('/tambah', async (req, res, next) => {
+
+    const { 
+        pernama,
+        permulai,
+        perselesai,
+        perstatus,
+        perjumkabkediri,
+        perjumkotkediri,
+        perjumnganjuk,
+    } = req.body
+
+    //validasi periode
+    const validatePeriode = await dbQueryAll({
+        sql: `SELECT perid from periode where (? between permulai and perselesai) or (? between permulai and perselesai)`,
+        params: [permulai, perselesai]
+    })
+
+    console.log(permulai, perselesai, validatePeriode)
+    if (validatePeriode.length > 0){
+        res.send({
+            status: 400,
+            message:"Awal atau akhir periode tabrakan dengan periode yang lain."
+        })
+        return;
+    }
+
+    const result = await dbInsert({
+        table: `periode`,
+        data: {
+            pernama,
+            permulai,
+            perselesai,
+            perstatus,
+            perjumkabkediri,
+            perjumkotkediri,
+            perjumnganjuk,
+        }
+    })
+
+    res.send({
+        status: result ? 200 : 400,
+        message:"Berhasil menambahkan periode."
+    })
+    return;
+});
+
+router.post('/ubah', async (req, res, next) => {
+
+    const { 
+        pernama,
+        permulai,
+        perselesai,
+        perstatus,
+        perjumkabkediri,
+        perjumkotkediri,
+        perjumnganjuk,
+        perid
+    } = req.body
+
+    //validasi periode
+    const validatePeriode = await dbQueryAll({
+        sql: `SELECT perid from periode where ((? between permulai and perselesai) or (? between permulai and perselesai)) and perid != ?`,
+        params: [permulai, perselesai, perid]
+    })
+
+    if (validatePeriode.length > 0){
+        res.send({
+            status: 400,
+            message:"Awal atau akhir periode tabrakan dengan periode yang lain."
+        })
+        return;
+    }
+
+    const resUpdate = await dbExec({
+        sql: `update periode set pernama = ?, permulai = ?, perselesai = ?, perstatus = ?, perjumkabkediri = ?, perjumkotkediri = ?, perjumnganjuk = ? where perid = ?`,
+        params: [
+            pernama,
+            permulai,
+            perselesai,
+            perstatus,
+            perjumkabkediri,
+            perjumkotkediri,
+            perjumnganjuk,
+            perid,            
+        ]
+    })
+
+    res.send({
+        status: resUpdate ? 200 : 400,
+        message:"Berhasil mengubah periode."
+    })
+    return;
+});
+
+router.post('/hapus', async (req, res, next) => {
+
+    const { 
+        perid
+    } = req.body
+
+    //validasi periode
+    const validatePeriode = await dbQueryAll({
+        sql: `SELECT perid from voting where perid = ?`,
+        params: [perid]
+    })
+
+    if (validatePeriode.length > 0){
+        res.send({
+            status: 400,
+            message:"Periode telah digunakan, anda tidak bisa menghapus periode yang telah digunakan."
+        })
+        return;
+    }
+
+    const resUpdate = await dbExec({
+        sql: `delete from periode where perid = ?`,
+        params: [
+            perid,            
+        ]
+    })
+
+    res.send({
+        status: resUpdate ? 200 : 400,
+        message:"Berhasil mengubah periode."
     })
     return;
 });
