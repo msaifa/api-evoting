@@ -1,5 +1,5 @@
 import express from 'express'
-import { dbInsert, dbQueryAll, dbQueryOne } from '../config/db';
+import { dbExec, dbInsert, dbQueryAll, dbQueryOne } from '../config/db';
 
 var router = express.Router();
 let sql = "" ;
@@ -29,7 +29,7 @@ const compare = ( a, b ) => {
       return -1;
     }
     return 0;
-  }
+}
 
 router.post('/suara-terbanyak', async (req, res, next) => {
 
@@ -47,8 +47,13 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         return;
     }
 
+    const {totalVote} = await dbQueryOne({
+        sql: `SELECT count(votid) as totalVote from voting where perid = ?`,
+        params: [perid]
+    })
+
     const getKandidat = await dbQueryAll({
-        sql: `SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+        sql: `SELECT count(votid) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
             k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama
             from voting v
             left join kandidat k on k.kanid = v.kanid
@@ -74,9 +79,18 @@ router.post('/pilih', async (req, res, next) => {
         kanid,
         vottanggal,
         usid,
-        deviceid,
-        perid
+        deviceid
     } = req.body
+
+    const perid = await getPeriodeByDate(vottanggal)
+
+    if (!perid){
+        res.send({
+            status: 400,
+            message:"Tidak ada periode aktif untuk saat ini."
+        })
+        return;
+    }
 
     //validasi email
     const validateDevice = await dbQueryAll({
@@ -222,6 +236,146 @@ router.post('/get-all', async (req, res, next) => {
         message:"Berhasil mengambil data kandidat.",
         data: dataKandidat,
         prevPeriode
+    })
+    return;
+});
+
+router.post('/tambah', async (req, res, next) => {
+
+    const { 
+        kannama,
+        kanttl,
+        kanalamat,
+        kanagama,
+        kanpekerjaan,
+        kanhp,
+        kanemail,
+        kanfoto,
+        kanasalkota
+    } = req.body
+
+    //validasi email
+    const validateEmail = await dbQueryAll({
+        sql: `SELECT kanid from kandidat where kanemail = ?`,
+        params: [kanemail]
+    })
+
+    if (validateEmail.length > 0){
+        res.send({
+            status: 400,
+            message:"Email telah digunakan oleh kandidat yang lainnya."
+        })
+        return;
+    }
+
+    const result = await dbInsert({
+        table: `kandidat`,
+        data: {
+            kannama,
+            kanttl,
+            kanalamat,
+            kanagama,
+            kanpekerjaan,
+            kanhp,
+            kanemail,
+            kanfoto,
+            kanasalkota
+        }
+    })
+
+    res.send({
+        status: result ? 200 : 400,
+        message:"Berhasil menambahkan kandidat."
+    })
+    return;
+});
+
+router.post('/ubah', async (req, res, next) => {
+
+    const { 
+        kannama,
+        kanttl,
+        kanalamat,
+        kanagama,
+        kanpekerjaan,
+        kanhp,
+        kanemail,
+        kanfoto,
+        kanasalkota,
+        kanid
+    } = req.body
+
+    //validasi email
+    const validateEmail = await dbQueryAll({
+        sql: `SELECT kanid from kandidat where kanemail = ? and kanid != ?`,
+        params: [kanemail, kanid]
+    })
+
+    if (validateEmail.length > 0){
+        res.send({
+            status: 400,
+            message:"Email telah digunakan oleh kandidat yang lainnya."
+        })
+        return;
+    }
+
+    const result = await dbExec({
+        sql: `UPDATE kandidat SET kannama = ?, kanttl = ?, kanalamat = ?, kanagama = ?, kanpekerjaan = ?, kanhp = ?, kanemail = ?, kanfoto = ?, kanasalkota = ? where kanid = ?`,
+        params: [
+            kannama,
+            kanttl,
+            kanalamat,
+            kanagama,
+            kanpekerjaan,
+            kanhp,
+            kanemail,
+            kanfoto,
+            kanasalkota,
+            kanid            
+        ]
+    })
+
+    res.send({
+        status: result ? 200 : 400,
+        message:"Berhasil mengubah kandidat."
+    })
+    return;
+});
+
+router.post('/get-all-web', async (req, res, next) => {
+
+    const { 
+        
+    } = req.body
+
+    const data = await dbQueryAll({
+        sql: `SELECT kanid, kannama, DATE_FORMAT(kanttl, '%d %b %Y') as kanttl, kanalamat, kanagama, kanpekerjaan, kanhp, kanemail, kanfoto, kanasalkota FROM kandidat order by kanid asc`,
+        params: []
+    })
+
+    res.send({
+        status: 200,
+        data
+    })
+    return;
+});
+
+router.post('/load', async (req, res, next) => {
+
+    const { 
+        kanid
+    } = req.body
+
+    const data = await dbQueryOne({
+        sql: `SELECT 
+            kannama, DATE_FORMAT(kanttl, '%d %b %Y') as kanttl, kanalamat, kanagama, kanpekerjaan, kanhp, kanemail, kanfoto, kanasalkota, kanid 
+            from kandidat where kanid = ?`,
+        params: [kanid]
+    })
+
+    res.send({
+        status: 200,
+        data
     })
     return;
 });
