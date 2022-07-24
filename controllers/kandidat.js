@@ -425,7 +425,7 @@ router.post('/get-all-suara', async (req, res, next) => {
     const getKandidat = await dbQueryAll({
         sql: `SELECT v.kanid, k.kannama, k.kanttl, k.kanalamat, v.vottanggal,
             k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama,
-            u.usnama
+            u.usnama, votdeviceid
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
