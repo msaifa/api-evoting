@@ -406,4 +406,105 @@ router.post('/hapus', async (req, res, next) => {
     return;
 });
 
+router.post('/get-all-suara', async (req, res, next) => {
+
+    const { 
+        tanggal
+    } = req.body
+
+    const perid = await getPeriodeByDate(tanggal)
+
+    if (!perid){
+        res.send({
+            status: 400,
+            message:"Tidak ada periode aktif untuk saat ini."
+        })
+        return;
+    }
+
+    const getKandidat = await dbQueryAll({
+        sql: `SELECT v.kanid, k.kannama, k.kanttl, k.kanalamat, v.vottanggal,
+            k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama,
+            u.usnama
+            from voting v
+            left join kandidat k on k.kanid = v.kanid
+            left join periode p on p.perid = v.perid 
+            left join user u on u.usid = v.usid
+            where v.perid = ?
+            order by vottanggal desc`,
+        params: [perid]
+    })    
+
+    res.send({
+        status: 200,
+        message:"Berhasil mengambil semua data suara.",
+        data: getKandidat
+    })
+    return;
+});
+
+router.post('/rekap', async (req, res, next) => {
+
+    const { 
+        tanggal
+    } = req.body
+
+    const perid = await getPeriodeByDate(tanggal)
+
+    if (!perid){
+        res.send({
+            status: 400,
+            message:"Tidak ada periode aktif untuk saat ini."
+        })
+        return;
+    }
+
+    const dataPeriode = await dbQueryOne({
+        sql: `select perid, pernama, DATE_FORMAT(permulai, '%d %b') as mulai, DATE_FORMAT(perselesai, '%d %b') as akhir from 
+                periode p 
+                where ? between permulai and perselesai`,
+        params: [tanggal]
+    })
+
+    const totalSuara = await dbQueryOne({
+        sql: `SELECT count(votid) as total from voting where perid = ?`,
+        params: [perid]
+    })
+
+    const totalKandidat = await dbQueryOne({
+        sql: `SELECT count(kanid) as total from kandidat`,
+        params: []
+    })
+
+    const {totalVote} = await dbQueryOne({
+        sql: `SELECT count(votid) as totalVote from voting where perid = ?`,
+        params: [perid]
+    })
+
+    const dataVoting = await dbQueryAll({
+        sql: `SELECT count(votid) as total, (${totalVote}) as totalkeseluruhan, max(v.vottanggal) as last, v.kanid, k.kannama, k.kanalamat, 
+            k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama, kanfoto
+            from voting v
+            left join kandidat k on k.kanid = v.kanid
+            left join periode p on p.perid = v.perid 
+            where v.perid = ?
+            group by v.kanid, v.perid
+            order by total desc 
+            limit 7`,
+        params: [perid]
+    })
+
+    res.send({
+        status: 200,
+        message:"Berhasil mengambil semua data suara.",
+        data: {
+            dataPeriode,
+            totalSuara,
+            totalKandidat,
+            dataVoting
+        }
+    })
+    return;
+});
+
 module.exports = router;
