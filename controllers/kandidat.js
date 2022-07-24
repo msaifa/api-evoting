@@ -380,4 +380,24 @@ router.post('/load', async (req, res, next) => {
     return;
 });
 
+router.post('/hapus', async (req, res, next) => {
+
+    const { 
+        kanid
+    } = req.body
+
+    const resUpdate = await dbExec({
+        sql: `delete from kandidat where kanid = ?`,
+        params: [
+            kanid,            
+        ]
+    })
+
+    res.send({
+        status: resUpdate ? 200 : 400,
+        message:"Berhasil menghapus Kandidat."
+    })
+    return;
+});
+
 module.exports = router;

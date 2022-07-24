@@ -127,7 +127,7 @@ router.post('/ubah', async (req, res, next) => {
 
     //validasi username
     const validateUsername = await dbQueryAll({
-        sql: `SELECT adid from admin where adusername = ? and adid = ?`,
+        sql: `SELECT adid from admin where adusername = ? and adid != ?`,
         params: [adusername, adid]
     })
 

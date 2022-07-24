@@ -1,14 +1,16 @@
-import mysql from 'mysql'
+import mysql from 'mysql2'
 
 console.log("connecting All Database...")
 
-const dbPusat = mysql.createConnection({
-  host     : process.env.HOST,
-  user     : process.env.USER,
-  password : process.env.PASS,
-  database : process.env.DB01,
-  timezone: 'Z'
-})
+const dbPusat = () => {
+  return mysql.createConnection({
+    host     : process.env.HOST,
+    user     : process.env.USER,
+    password : process.env.PASS,
+    database : process.env.DB01,
+    timezone: 'Z',
+  })
+}
 
 console.log("connected")
 
@@ -16,7 +18,7 @@ export const dbExec = ({
   sql, 
   params,
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
     const data = new Promise((resolve,rej) => {
       conn.query(sql, params, (err, res) => {
@@ -33,6 +35,8 @@ export const dbExec = ({
     return data 
   } catch(e){
       return false
+  } finally {
+    conn.end()
   }
 }
 
@@ -40,7 +44,7 @@ export const dbQueryAll = ({
   sql, 
   params = [],
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
     const data = new Promise((resolve,rej) => {
       conn.query(sql, params, (err, res) => {
@@ -57,6 +61,8 @@ export const dbQueryAll = ({
   } catch(e){
       console.log(e)
       return []
+  } finally {
+    conn.end()
   }
 }
 
@@ -64,7 +70,7 @@ export const dbQueryOne = ({
   sql, 
   params,
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
     const data = new Promise((resolve,rej) => {
       conn.query(sql, params, (err, res) => {
@@ -80,13 +86,15 @@ export const dbQueryOne = ({
     return data 
   } catch(e){
       return false
+  } finally {
+    conn.end()
   }
 }
 
 export const dbStartTrans = ({
   
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
           conn.query("START TRANSACTION", [], (err, res) => {
@@ -103,13 +111,15 @@ export const dbStartTrans = ({
       return data 
   } catch(e){
       return false
+  } finally {
+    conn.end()
   }
 }
 
 export const dbCommit = ({
   
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
           conn.query("COMMIT", [], (err, res) => {
@@ -126,13 +136,15 @@ export const dbCommit = ({
       return data 
   } catch(e){
       return false
+  } finally {
+    conn.end()
   }
 }
 
 export const dbRollback = ({
   
 }) => {
-  const conn = dbPusat
+  const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
           conn.query("ROLLBACK", [], (err, res) => {
@@ -149,6 +161,8 @@ export const dbRollback = ({
       return data 
   } catch(e){
       return false
+  } finally {
+    conn.end()
   }
 }
 
