@@ -23,7 +23,7 @@ router.get('/get-all/:pages', async (req, res, next) => {
     }
 
     const data = await dbQueryAll({
-        sql: `select berid, berjudul, DATE_FORMAT(bertanggal, '%d %b %Y %H:%i') as bertanggal, berauthor, berkonten, berfoto, berstatus from berita 
+        sql: `select berid, berjudul, DATE_FORMAT(bertanggal, '%Y-%m-%d %H:%i:%S') as bertanggal, berauthor, berkonten, berfoto, berstatus from berita 
         order by bertanggal desc 
         LIMIT ? OFFSET ?`,
         params: [limit, (pages-1)*limit]

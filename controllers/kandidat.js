@@ -34,10 +34,16 @@ const compare = ( a, b ) => {
 router.post('/suara-terbanyak', async (req, res, next) => {
 
     const { 
-        tanggal
+        tanggal,
+        allData
     } = req.body
 
     const perid = await getPeriodeByDate(tanggal)
+    let limit = ' limit 2'
+
+    if (allData === true){
+        limit = ''
+    }
 
     if (!perid){
         res.send({
@@ -61,7 +67,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             where v.perid = ?
             group by v.kanid, v.perid
             order by total desc 
-            limit 2`,
+            ${limit}`,
         params: [perid]
     })    
 
