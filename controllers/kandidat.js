@@ -42,7 +42,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     let perid
     let limit = ' limit 2'
 
-    if (periode == 0){
+    if (periode == 0 || !periode){
         perid = await getPeriodeByDate(tanggal)
     } else {
         perid = periode
@@ -428,7 +428,7 @@ router.post('/get-all-suara', async (req, res, next) => {
     } = req.body
 
     let perid ;
-    if (periode == 0){
+    if (periode == 0 || !periode){
         perid = await getPeriodeByDate(tanggal)
     } else {
         perid = periode
