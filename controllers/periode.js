@@ -10,8 +10,19 @@ let resDB= false ;
 router.post('/get-all', async (req, res, next) => {
 
     const { 
-        
+        tanggal
     } = req.body
+
+    let perid = 0
+    const currentPeriode = await dbQueryAll({
+        sql: `select perid from 
+                periode p 
+                where ? between permulai and perselesai`,
+        params: [tanggal]
+    })
+    if (currentPeriode.length > 0){
+        perid = currentPeriode[0].perid
+    }
 
     const data = await dbQueryAll({
         sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%d %b %Y %H:%i') as permulai, DATE_FORMAT(perselesai, '%d %b %Y %H:%i') as perselesai, perstatus FROM periode order by permulai asc`,
@@ -20,7 +31,8 @@ router.post('/get-all', async (req, res, next) => {
 
     res.send({
         status: 200,
-        data
+        data,
+        perid
     })
     return;
 });

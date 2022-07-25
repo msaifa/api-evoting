@@ -179,7 +179,13 @@ router.post('/get-all', async (req, res, next) => {
         params: [currentPeriodeID]
     })
 
-    if (!prevPeriode){
+    if (!currentPeriodeID && !prevPeriode){
+        res.send({
+            status: 400,
+            message:"Tidak ada periode aktif dan tidak ada kandidat tersedia."
+        })
+        return;
+    } else if (!prevPeriode){
         // jika belum pernah dilakukan voting, maka ambil semua
         dataKandidat = await dbQueryAll({
             sql: `SELECT kanid,kannama,kanttl,kanalamat,kanagama,kanpekerjaan,kanhp,kanemail,kanfoto,kanasalkota 
@@ -410,10 +416,16 @@ router.post('/hapus', async (req, res, next) => {
 router.post('/get-all-suara', async (req, res, next) => {
 
     const { 
-        tanggal
+        tanggal,
+        periode
     } = req.body
 
-    const perid = await getPeriodeByDate(tanggal)
+    let perid ;
+    if (periode == 0){
+        perid = await getPeriodeByDate(tanggal)
+    } else {
+        perid = periode
+    }
 
     if (!perid){
         res.send({
