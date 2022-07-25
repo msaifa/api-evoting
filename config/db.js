@@ -30,6 +30,7 @@ export const dbExec = ({
         }
 
         resolve(result)
+        conn.end()
       })
     })
     
@@ -37,7 +38,7 @@ export const dbExec = ({
   } catch(e){
     return false
   } finally {
-    conn.end()
+    
   }
 }
 
@@ -55,6 +56,8 @@ export const dbQueryAll = ({
         }
         
         resolve(res)
+        console.log('tes aja')
+        conn.end()
       })
     })
     
@@ -63,7 +66,7 @@ export const dbQueryAll = ({
     console.log(e)
     return []
   } finally {
-    conn.end()
+    
   }
 }
 
@@ -81,6 +84,7 @@ export const dbQueryOne = ({
         }
 
         resolve(res[0])
+        conn.end()
       })
     })
     
@@ -88,7 +92,7 @@ export const dbQueryOne = ({
   } catch(e){
     return false
   } finally {
-    conn.end()
+    
   }
 }
 
