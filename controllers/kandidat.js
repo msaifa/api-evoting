@@ -35,11 +35,18 @@ router.post('/suara-terbanyak', async (req, res, next) => {
 
     const { 
         tanggal,
-        allData
+        allData,
+        periode
     } = req.body
 
-    const perid = await getPeriodeByDate(tanggal)
+    let perid
     let limit = ' limit 2'
+
+    if (perid == 0){
+        perid = await getPeriodeByDate(tanggal)
+    } else {
+        perid = periode
+    }
 
     if (allData === true){
         limit = ''
