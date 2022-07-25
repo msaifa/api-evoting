@@ -24,9 +24,9 @@ export const dbExec = ({
       conn.query(sql, params, (err, res) => {
         let result = true
         if (err) {
-          console.log(err)
-          result = false 
           rej(false)
+          conn.end()
+          return ;
         }
 
         resolve(result)
@@ -36,9 +36,8 @@ export const dbExec = ({
     
     return data 
   } catch(e){
+    console.log('err: 0', e)
     return false
-  } finally {
-    
   }
 }
 
@@ -52,21 +51,19 @@ export const dbQueryAll = ({
       conn.query(sql, params, (err, res) => {
         if (err){
           rej([])
-          return null ;
+          conn.end()
+          return ;
         }
         
         resolve(res)
-        console.log('tes aja')
         conn.end()
       })
     })
     
     return data 
   } catch(e){
-    console.log(e)
+    console.log("err 1: ", e)
     return []
-  } finally {
-    
   }
 }
 
@@ -80,6 +77,7 @@ export const dbQueryOne = ({
       conn.query(sql, params, (err, res) => {
         if (err){
           rej(false)
+          conn.end()
           return null ;
         }
 
@@ -90,9 +88,8 @@ export const dbQueryOne = ({
     
     return data 
   } catch(e){
+    console.log('err: 2', e)
     return false
-  } finally {
-    
   }
 }
 
@@ -117,8 +114,6 @@ export const dbStartTrans = ({
       return data 
   } catch(e){
       return false
-  } finally {
-    conn.end()
   }
 }
 
@@ -143,8 +138,6 @@ export const dbCommit = ({
       return data 
   } catch(e){
       return false
-  } finally {
-    conn.end()
   }
 }
 
