@@ -25,11 +25,10 @@ export const dbExec = ({
         let result = true
         if (err) {
           rej(false)
-          conn.end()
-          return ;
+        } else if (result){
+          resolve(result)
         }
 
-        resolve(result)
         conn.end()
       })
     })
@@ -51,11 +50,10 @@ export const dbQueryAll = ({
       conn.query(sql, params, (err, res) => {
         if (err){
           rej([])
-          conn.end()
-          return ;
+        } else if (res){
+          resolve(res)
         }
         
-        resolve(res)
         conn.end()
       })
     })
@@ -77,11 +75,10 @@ export const dbQueryOne = ({
       conn.query(sql, params, (err, res) => {
         if (err){
           rej(false)
-          conn.end()
-          return null ;
+        } else if (res){
+          resolve(res[0])
         }
 
-        resolve(res[0])
         conn.end()
       })
     })
@@ -99,16 +96,16 @@ export const dbStartTrans = ({
   const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
-          conn.query("START TRANSACTION", [], (err, res) => {
-              let result = true
-              if (err) {
-                  console.log(err)
-                  result = false 
-                  rej(false)
-              }
+          // conn.query("START TRANSACTION", [], (err, res) => {
+          //     let result = true
+          //     if (err) {
+          //         console.log(err)
+          //         result = false 
+          //         rej(false)
+          //     }
   
-              resolve(result)
-          })
+          //     resolve(result)
+          // })
       })
       
       return data 
@@ -123,16 +120,16 @@ export const dbCommit = ({
   const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
-          conn.query("COMMIT", [], (err, res) => {
-              let result = true
-              if (err) {
-                  console.log(err)
-                  result = false 
-                  rej(false)
-              }
+          // conn.query("COMMIT", [], (err, res) => {
+          //     let result = true
+          //     if (err) {
+          //         console.log(err)
+          //         result = false 
+          //         rej(false)
+          //     }
   
-              resolve(result)
-          })
+          //     resolve(result)
+          // })
       })
       
       return data 
@@ -147,15 +144,15 @@ export const dbRollback = ({
   const conn = dbPusat()
   try{
       const data = new Promise((resolve,rej) => {
-          conn.query("ROLLBACK", [], (err, res) => {
-              let result = true
-              if (err) {
-                  console.log(err)
-                  result = false 
-              }
+          // conn.query("ROLLBACK", [], (err, res) => {
+          //     let result = true
+          //     if (err) {
+          //         console.log(err)
+          //         result = false 
+          //     }
   
-              resolve(result)
-          })
+          //     resolve(result)
+          // })
       })
       
       return data 
