@@ -189,16 +189,17 @@ router.post('/get-all', async (req, res, next) => {
     } else {
         // jika sudah pernah melakukan voting, mengambil kandidat dari hasil voting sebelumnya
         // ambil data dari kota kab kediri
+        const prevperid = prevPeriode.perid
         const dataKabKediri = await dbQueryAll({
             sql: `SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
                     k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                     from voting v
                     left join kandidat k on k.kanid = v.kanid 
-                    where kanasalkota = 'Kab. Kediri'
+                    where kanasalkota = 'Kab. Kediri' and perid = ?
                     group by v.kanid, v.perid
                     order by total desc
                     limit ?`,
-            params: [prevPeriode.perjumkabkediri]
+            params: [prevperid,prevPeriode.perjumkabkediri]
         })
 
         // ambil data dari kota kab kediri
@@ -207,11 +208,11 @@ router.post('/get-all', async (req, res, next) => {
                     k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                     from voting v
                     left join kandidat k on k.kanid = v.kanid 
-                    where kanasalkota = 'Kota Kediri'
+                    where kanasalkota = 'Kota Kediri' and perid = ?
                     group by v.kanid, v.perid
                     order by total desc
                     limit ?`,
-            params: [prevPeriode.perjumkotkediri]
+            params: [prevperid,prevPeriode.perjumkotkediri]
         })
 
         // ambil data dari kota kab kediri
@@ -220,11 +221,11 @@ router.post('/get-all', async (req, res, next) => {
                     k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                     from voting v
                     left join kandidat k on k.kanid = v.kanid 
-                    where kanasalkota = 'Kab. Nganjuk'
+                    where kanasalkota = 'Kab. Nganjuk' and perid = ?
                     group by v.kanid, v.perid
                     order by total desc
                     limit ?`,
-            params: [prevPeriode.perjumnganjuk]
+            params: [prevperid,prevPeriode.perjumnganjuk]
         })
 
         dataKandidat = [
