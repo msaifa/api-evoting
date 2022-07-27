@@ -241,9 +241,9 @@ router.post('/get-all', async (req, res, next) => {
                 limit ? offset ?`,
             params: [
                 prevperid,
-                prevPeriode.perjumkabkediri,
-                prevperid,
                 prevPeriode.perjumkotkediri,
+                prevperid,
+                prevPeriode.perjumkabkediri,
                 prevperid,
                 prevPeriode.perjumnganjuk,
                 limit, 
