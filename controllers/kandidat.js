@@ -61,12 +61,12 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     }
 
     const {totalVote} = await dbQueryOne({
-        sql: `SELECT count(votid) as totalVote from voting where perid = ?`,
+        sql: `SELECT sum(votjumlah) as totalVote from voting where perid = ?`,
         params: [perid]
     })
 
     const getKandidat = await dbQueryAll({
-        sql: `SELECT count(votid) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+        sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
             k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama
             from voting v
             left join kandidat k on k.kanid = v.kanid
@@ -206,7 +206,7 @@ router.post('/get-all', async (req, res, next) => {
         dataKandidat = await dbQueryAll({
             sql: `select total,kanid, kannama, kanttl, kanalamat, kanagama, kanpekerjaan, kanhp,kanfoto, kanasalkota,perid from (
                     (
-                        SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
                         k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                         from voting v
                         left join kandidat k on k.kanid = v.kanid 
@@ -217,7 +217,7 @@ router.post('/get-all', async (req, res, next) => {
                     )
                     UNION 
                     (
-                        SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
                         k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                         from voting v
                         left join kandidat k on k.kanid = v.kanid 
@@ -228,7 +228,7 @@ router.post('/get-all', async (req, res, next) => {
                     )
                     UNION 
                     (
-                        SELECT count(votid) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
                         k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
                         from voting v
                         left join kandidat k on k.kanid = v.kanid 
@@ -488,7 +488,7 @@ router.post('/rekap', async (req, res, next) => {
     })
 
     const totalSuara = await dbQueryOne({
-        sql: `SELECT count(votid) as total from voting where perid = ?`,
+        sql: `SELECT sum(votjumlah) as total from voting where perid = ?`,
         params: [perid]
     })
 
@@ -498,12 +498,12 @@ router.post('/rekap', async (req, res, next) => {
     })
 
     const {totalVote} = await dbQueryOne({
-        sql: `SELECT count(votid) as totalVote from voting where perid = ?`,
+        sql: `SELECT sum(votjumlah) as totalVote from voting where perid = ?`,
         params: [perid]
     })
 
     const dataVoting = await dbQueryAll({
-        sql: `SELECT count(votid) as total, (${totalVote}) as totalkeseluruhan, max(v.vottanggal) as last, v.kanid, k.kannama, k.kanalamat, 
+        sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, max(v.vottanggal) as last, v.kanid, k.kannama, k.kanalamat, 
             k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama, kanfoto
             from voting v
             left join kandidat k on k.kanid = v.kanid

@@ -4,10 +4,10 @@ console.log("connecting All Database...")
 
 const dbPusat = () => {
   return mysql.createConnection({
-    host     : process.env.HOST,
-    user     : process.env.USER,
-    password : process.env.PASS,
-    database : process.env.DB01,
+    host     : process.env.db_logistik_HOST,
+    user     : process.env.db_logistik_USER,
+    password : process.env.db_logistik_PASS,
+    database : process.env.db_logistik_DB,
     timezone: 'Z',
   })
 }
@@ -24,6 +24,7 @@ export const dbExec = ({
       conn.query(sql, params, (err, res) => {
         let result = true
         if (err) {
+          console.log('err 0.1 : ' , err)
           rej(false)
         } else if (result){
           resolve(result)
@@ -49,7 +50,6 @@ export const dbQueryAll = ({
     const data = new Promise((resolve,rej) => {
       conn.query(sql, params, (err, res) => {
         if (err){
-          console.log("err dbQueryAll: ", err)
           rej([])
         } else if (res){
           resolve(res)
@@ -88,79 +88,6 @@ export const dbQueryOne = ({
   } catch(e){
     console.log('err: 2', e)
     return false
-  }
-}
-
-export const dbStartTrans = ({
-  
-}) => {
-  const conn = dbPusat()
-  try{
-      const data = new Promise((resolve,rej) => {
-          // conn.query("START TRANSACTION", [], (err, res) => {
-          //     let result = true
-          //     if (err) {
-          //         console.log(err)
-          //         result = false 
-          //         rej(false)
-          //     }
-  
-          //     resolve(result)
-          // })
-      })
-      
-      return data 
-  } catch(e){
-      return false
-  }
-}
-
-export const dbCommit = ({
-  
-}) => {
-  const conn = dbPusat()
-  try{
-      const data = new Promise((resolve,rej) => {
-          // conn.query("COMMIT", [], (err, res) => {
-          //     let result = true
-          //     if (err) {
-          //         console.log(err)
-          //         result = false 
-          //         rej(false)
-          //     }
-  
-          //     resolve(result)
-          // })
-      })
-      
-      return data 
-  } catch(e){
-      return false
-  }
-}
-
-export const dbRollback = ({
-  
-}) => {
-  const conn = dbPusat()
-  try{
-      const data = new Promise((resolve,rej) => {
-          // conn.query("ROLLBACK", [], (err, res) => {
-          //     let result = true
-          //     if (err) {
-          //         console.log(err)
-          //         result = false 
-          //     }
-  
-          //     resolve(result)
-          // })
-      })
-      
-      return data 
-  } catch(e){
-      return false
-  } finally {
-    conn.end()
   }
 }
 
