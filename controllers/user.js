@@ -60,6 +60,7 @@ router.post('/get-all', async (req, res, next) => {
     const data = await dbQueryAll({
         sql: `select usnama, usemail, usnohp, usfoto, usid, uspassword
                 from user
+                where usid > 0
                 order by usid asc `,
         params: []
     })
