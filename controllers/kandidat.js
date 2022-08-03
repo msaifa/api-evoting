@@ -78,6 +78,11 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         params: [perid]
     })    
 
+    // konversi tipe data
+    for(let i = 0 ; i < getKandidat.length ; i++){
+        getKandidat[i]['total'] = parseInt(getKandidat[i]['total'])
+    }
+
     res.send({
         status: 200,
         message:"Berhasil mengambil data suara terbanyak.",
