@@ -14,7 +14,7 @@ router.post('/load-all', async (req, res, next) => {
     } = req.body
 
     const result = await dbQueryAll({
-        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akupassword, akustatus, ma.grpid
+        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akupassword, akustatus, ma.grpid, akupangkat, akunrp, akujabatan
               FROM mas_akun ma
               order by akuid asc`,
     })
@@ -32,7 +32,7 @@ router.post('/load', async (req, res, next) => {
     } = req.body
 
     const result = await dbQueryOne({
-        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akupassword, akustatus, grpid
+        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akupassword, akustatus, grpid, akupangkat, akunrp, akujabatan
               FROM mas_akun where akuid = ? order by akuid desc`,
         params: [akuid]
     })
@@ -82,17 +82,23 @@ router.post('/update', async (req, res, next) => {
         akuusername,
         akupassword,
         grpid,
+        akupangkat, 
+        akunrp, 
+        akujabatan,
         akuid
     } = req.body
 
     const result = await dbExec({
-        sql: `UPDATE mas_akun SET akunama = ?, akuemail = ?, akuketerangan = ?, akuusername = ?, grpid = ? where akuid = ?`,
+        sql: `UPDATE mas_akun SET akunama = ?, akuemail = ?, akuketerangan = ?, akuusername = ?, grpid = ?, akupangkat = ?, akunrp = ?, akujabatan = ? where akuid = ?`,
         params: [
             akunama,
             akuemail,
             akuketerangan,
             akuusername,
             grpid,
+            akupangkat, 
+            akunrp, 
+            akujabatan,
             akuid
         ]
     })

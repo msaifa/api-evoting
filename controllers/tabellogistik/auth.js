@@ -15,7 +15,7 @@ router.post('/validate', async (req, res, next) => {
     } = req.body
 
     const validateLogin = await dbQueryOne({
-        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akustatus, grpid FROM mas_akun where akuusername = ? and akupassword = ?`,
+        sql: `SELECT akuid, akunama, akuemail, akuketerangan, akuusername, akustatus, grpid, akupangkat, akunrp, akujabatan FROM mas_akun where akuusername = ? and akupassword = ?`,
         params: [username, password]
     })
 

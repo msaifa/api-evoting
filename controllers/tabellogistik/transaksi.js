@@ -7,36 +7,58 @@ let par = [] ;
 let resDB= false ;
 
 /* GET home page. */
-router.post('/load-all', async (req, res, next) => {
 
-    const { 
-        
-    } = req.body
-
-    const result = await dbQueryAll({
-        sql: `SELECT masid, masnama, masdeskripsi, maskolom, masstatus
-              FROM master ma
-              order by masid asc`,
-    })
-
-    res.send({
-        status: 200,
-        data: result
-    })
-});
-
-router.post('/load', async (req, res, next) => {
+router.post('/detail', async (req, res, next) => {
 
   const { 
     masid
   } = req.body
 
   const result = await dbQueryOne({
-      sql: `SELECT masid, masnama, masdeskripsi, maskolom, masstatus
-            FROM master ma
-            where masid = ?
-            order by masid asc`,
-      params: [masid]
+    sql: `SELECT masid, masnama, masdeskripsi, maskolom, masstatus from master where masid = ?`,
+    params: [masid]
+  })
+
+  res.send({
+    status: 200,
+    data: result,
+  })
+});
+
+router.post('/load-all', async (req, res, next) => {
+
+  const { 
+    masid
+  } = req.body
+
+  const result = await dbQueryOne({
+    sql: `SELECT masid, masnama, masdeskripsi, maskolom, masstatus from master where masid = ?`,
+    params: [masid]
+  })
+
+  const dataTransaksi = await dbQueryAll({
+    sql: `select transid, masid, transtanggal, transvalue, transstatus  from transaksi t where masid = ? order by transid desc`,
+    params: [masid]
+  })
+
+  res.send({
+    status: 200,
+    data: result,
+    dataTransaksi
+  })
+});
+
+router.post('/load', async (req, res, next) => {
+
+  const { 
+    transid
+  } = req.body
+
+  const result = await dbQueryOne({
+      sql: `SELECT transid, masid, transtanggal, transvalue, transstatus
+            FROM transaksi t
+            where transid = ?`,
+      params: [transid]
   })
 
   res.send({
@@ -48,13 +70,17 @@ router.post('/load', async (req, res, next) => {
 router.post('/insert', async (req, res, next) => {
 
   const { 
-    masnama, masdeskripsi, maskolom
+    transvalue,
+    masid,
+    transtanggal    
   } = req.body
 
   const result = await dbInsert({
-      table: `master`,
+      table: `transaksi`,
       data: {
-        masnama, masdeskripsi, maskolom
+        transvalue,
+        masid,
+        transtanggal
       }
   })
 
@@ -67,13 +93,17 @@ router.post('/insert', async (req, res, next) => {
 router.post('/update', async (req, res, next) => {
 
   const { 
-    masnama, masdeskripsi, maskolom, masid
+    transvalue,
+    transtanggal,
+    transid
   } = req.body
 
   const result = await dbExec({
-      sql: `UPDATE master SET masnama = ?, masdeskripsi = ?, maskolom = ? where masid = ?`,
+      sql: `UPDATE transaksi SET transvalue = ?, transtanggal = ? where transid = ?`,
       params: [
-        masnama, masdeskripsi, maskolom, masid
+        transvalue,
+        transtanggal,
+        transid
       ]
   }).catch((err) => console.log(err))
 
@@ -86,13 +116,13 @@ router.post('/update', async (req, res, next) => {
 router.post('/hapus', async (req, res, next) => {
 
   const { 
-    masid
+    transid
   } = req.body
 
   const result = await dbExec({
-      sql: `DELETE FROM master WHERE masid = ?`,
+      sql: `DELETE FROM transaksi WHERE transid = ?`,
       params: [
-        masid
+        transid
       ]
   }).catch((err) => console.log(err))
 
