@@ -265,12 +265,12 @@ router.post('/get-all', async (req, res, next) => {
     // mengambil jumlah suara pada periode saat ini
     for (let i = 0 ; i < dataKandidat.length ; i++){
         const totalPerKandidat = await dbQueryOne({
-            sql: `select count(votid) as total
+            sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ?`,
+                    where perid = ? and k.kanid = ? `,
             params: [currentPeriodeID, dataKandidat[i].kanid]
-        })
-        dataKandidat[i]['total'] = totalPerKandidat['total']
+        }).catch(e => console.log(e))
+        dataKandidat[i]['total'] = totalPerKandidat ? totalPerKandidat['total'] : 0
     }
 
     res.send({
@@ -599,7 +599,7 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
         })
     
         let getKandidat = await dbQueryAll({
-            sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama
+            sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama, kanfoto
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
                 left join periode p on p.perid = v.perid 
