@@ -270,7 +270,7 @@ router.post('/get-all', async (req, res, next) => {
                     where perid = ? and kanid = ? `,
             params: [currentPeriodeID, dataKandidat[i].kanid]
         }).catch(e => console.log(e))
-        dataKandidat[i]['total'] = totalPerKandidat ? totalPerKandidat['total'] : 0
+        dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
     }
 
     res.send({
