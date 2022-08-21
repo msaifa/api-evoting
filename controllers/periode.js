@@ -14,6 +14,14 @@ router.post('/get-all', async (req, res, next) => {
     } = req.body
 
     let perid = 0
+
+    const getKota = await dbQueryAll({
+        sql: `select distinct kanasalkota 
+                from kandidat k 
+                order by kanasalkota desc`,
+        params: []
+    })
+
     const currentPeriode = await dbQueryAll({
         sql: `select perid from 
                 periode p 
@@ -32,7 +40,8 @@ router.post('/get-all', async (req, res, next) => {
     res.send({
         status: 200,
         data,
-        perid
+        perid,
+        dataKota: getKota
     })
     return;
 });

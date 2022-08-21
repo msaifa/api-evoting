@@ -36,7 +36,8 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     const { 
         tanggal,
         allData,
-        periode
+        periode,
+        kota
     } = req.body
 
     let perid
@@ -60,8 +61,12 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         return;
     }
 
+    const filterKota = kota ? ` and kanasalkota = '${kota}'`:''
     const {totalVote} = await dbQueryOne({
-        sql: `SELECT sum(votjumlah) as totalVote from voting where perid = ?`,
+        sql: `SELECT sum(votjumlah) as totalVote 
+                from voting v
+                left join kandidat k on k.kanid = v.kanid
+                where perid = ? ${filterKota}`,
         params: [perid]
     })
 
@@ -71,7 +76,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ?
+            where v.perid = ? ${filterKota}
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
@@ -257,11 +262,22 @@ router.post('/get-all', async (req, res, next) => {
         })
     }
 
+    // mengambil jumlah suara pada periode saat ini
+    for (let i = 0 ; i < dataKandidat.length ; i++){
+        const totalPerKandidat = await dbQueryOne({
+            sql: `select count(votid) as total
+                    from voting v
+                    where perid = ? and kanid = ?`,
+            params: [currentPeriodeID, dataKandidat[i].kanid]
+        })
+        dataKandidat[i]['total'] = totalPerKandidat['total']
+    }
+
     res.send({
         status: 200,
         message:"Berhasil mengambil data kandidat.",
         data: dataKandidat,
-        prevPeriode
+        // prevPeriode
     })
     return;
 });
@@ -529,6 +545,86 @@ router.post('/rekap', async (req, res, next) => {
             totalKandidat,
             dataVoting
         }
+    })
+    return;
+});
+
+router.post('/suara-terbanyak-kota', async (req, res, next) => {
+
+    const { 
+        tanggal,
+        allData,
+        periode
+    } = req.body
+
+    let perid
+    let limit = ' limit 5'
+
+    if (periode == 0 || !periode){
+        perid = await getPeriodeByDate(tanggal)
+    } else {
+        perid = periode
+    }
+
+    if (allData === true){
+        limit = ''
+    }
+
+    if (!perid){
+        res.send({
+            status: 400,
+            message:"Tidak ada periode aktif untuk saat ini."
+        })
+        return;
+    }
+
+    const getKota = await dbQueryAll({
+        sql: `select distinct kanasalkota 
+                from kandidat k 
+                order by kanasalkota desc`,
+        params: []
+    })
+
+    let mainData = []
+
+    for(let i = 0 ; i < getKota.length ; i++){
+        let kota = getKota[i].kanasalkota
+        
+        let {totalVote} = await dbQueryOne({
+            sql: `SELECT sum(votjumlah) as totalVote 
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid
+                    where perid = ? and kanasalkota = ?`,
+            params: [perid, kota]
+        })
+    
+        let getKandidat = await dbQueryAll({
+            sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama
+                from voting v
+                left join kandidat k on k.kanid = v.kanid
+                left join periode p on p.perid = v.perid 
+                where v.perid = ? and kanasalkota = ?
+                group by v.kanid, v.perid
+                order by total desc 
+                ${limit}`,
+            params: [perid, kota]
+        })
+
+        // konversi tipe data
+        for(let j = 0 ; j < getKandidat.length ; j++){
+            getKandidat[j]['total'] = parseInt(getKandidat[j]['total'])
+        }
+
+        mainData.push({
+            asal: kota,
+            data: getKandidat
+        })
+    }
+
+    res.send({
+        status: 200,
+        message:"Berhasil mengambil data suara terbanyak.",
+        data: mainData
     })
     return;
 });
