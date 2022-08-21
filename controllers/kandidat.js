@@ -267,7 +267,7 @@ router.post('/get-all', async (req, res, next) => {
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and k.kanid = ? `,
+                    where perid = ? and kanid = ? `,
             params: [currentPeriodeID, dataKandidat[i].kanid]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat ? totalPerKandidat['total'] : 0
