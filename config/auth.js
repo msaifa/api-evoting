@@ -20,26 +20,35 @@ const decryptJWT = (data) => {
 }
 
 const validateRequest = (headers, url) => {
-  return true ;
   if (url == "/admin-auth/create-auth" && headers.xauth == masterKey){
     return true
-  } else if (headers.xauth){
-    const newHeaders = decryptJWT(headers.xauth)
-
-    if (newHeaders){
-      const timestamp = newHeaders.timestamp
-      const auth = newHeaders.authorization
-      const token = `${moment(timestamp).format("X")}:${encryptionKey}` ;
-  
-      const resEnc = sha256.hmac(encryptionKey, token)
-  
-      // mengatur untuk masa expirednya
-      if (resEnc == auth){
-        return true
-      } else {
-        return false
-      }
+  } else if (headers['x-token']){
+    const tokenReq = headers['x-token']
+    const timestamp = headers['timestamp']
+    const tokenGen = sha256.hmac(encryptionKey, `${timestamp}com.kediriapp.myLeaderSiiip`)
+    const currentTimestamp = moment().valueOf()
+    
+    if ((currentTimestamp-timestamp) < 5000 && tokenGen == tokenReq){
+      return true
     }
+
+    return false ;
+    // const newHeaders = decryptJWT(headers.xauth)
+
+    // if (newHeaders){
+    //   const timestamp = newHeaders.timestamp
+    //   const auth = newHeaders.authorization
+    //   const token = `${moment(timestamp).format("X")}:${encryptionKey}` ;
+  
+    //   const resEnc = sha256.hmac(encryptionKey, token)
+  
+    //   // mengatur untuk masa expirednya
+    //   if (resEnc == auth){
+    //     return true
+    //   } else {
+    //     return false
+    //   }
+    // }
     // const result = JWT.verify(auth, encryptionKey, {
     //   algorithms:"HS512"
     // },(err, dec) => {
@@ -52,10 +61,9 @@ const validateRequest = (headers, url) => {
     // })
 
     // return result
-    return false;
   } 
   
-  return false
+  return true
 }
 
 export default {
