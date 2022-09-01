@@ -63,7 +63,7 @@ const validateRequest = (headers, url) => {
     // return result
   } 
   
-  return true
+  return false
 }
 
 export default {
