@@ -21,6 +21,22 @@ const getPeriodeByDate = async (tanggal) => {
     }
 }
 
+const getPeriodePengumuman = async (tanggal) => {
+    const validatePeriode = await dbQueryAll({
+        sql: `select perid from 
+                periode p 
+                where perpengumuman < ?
+                order by perpengumuman desc`,
+        params: [tanggal]
+    })
+
+    if (validatePeriode.length == 0){
+        return false;
+    } else {
+        return validatePeriode[0].perid
+    }
+}
+
 const compare = ( a, b ) => {
     if ( a.total < b.total ){
       return 1;
@@ -44,7 +60,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     let limit = ' limit 2'
 
     if (periode == 0 || !periode){
-        perid = await getPeriodeByDate(tanggal)
+        perid = await getPeriodePengumuman(tanggal)
     } else {
         perid = periode
     }
@@ -558,10 +574,10 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
     } = req.body
 
     let perid
-    let limit = ' limit 5'
+    let limit = ''
 
     if (periode == 0 || !periode){
-        perid = await getPeriodeByDate(tanggal)
+        perid = await getPeriodePengumuman(tanggal)
     } else {
         perid = periode
     }
