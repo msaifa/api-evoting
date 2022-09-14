@@ -33,52 +33,8 @@ router.post('/get-all', async (req, res, next) => {
     }
 
     const data = await dbQueryAll({
-        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%d %b %Y %H:%i') as permulai, DATE_FORMAT(perselesai, '%d %b %Y %H:%i') as perselesai, DATE_FORMAT(perpengumuman, '%d %b %Y %H:%i') as perpengumuman, perstatus FROM periode order by permulai asc`,
+        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%d %b %Y %H:%i') as permulai, DATE_FORMAT(perselesai, '%d %b %Y %H:%i') as perselesai, perstatus FROM periode order by permulai asc`,
         params: []
-    })
-
-    res.send({
-        status: 200,
-        data,
-        perid,
-        dataKota: getKota
-    })
-    return;
-});
-
-router.post('/get-all-v2', async (req, res, next) => {
-
-    const { 
-        tanggal
-    } = req.body
-
-    let perid = 0
-
-    const getKota = await dbQueryAll({
-        sql: `select distinct kanasalkota 
-                from kandidat k 
-                order by kanasalkota desc`,
-        params: []
-    })
-
-    const currentPeriode = await dbQueryAll({
-        sql: `select perid from 
-                periode p 
-                where perpengumuman < ?
-                order by perpengumuman desc`,
-        params: [tanggal]
-    })
-    if (currentPeriode.length > 0){
-        perid = currentPeriode[0].perid
-    }
-
-    const data = await dbQueryAll({
-        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%d %b %Y %H:%i') as permulai, DATE_FORMAT(perselesai, '%d %b %Y %H:%i') as perselesai, 
-                    DATE_FORMAT(perpengumuman, '%d %b %Y %H:%i') as perpengumuman, perstatus 
-                    FROM periode 
-                    where perpengumuman < ?
-                    order by permulai asc`,
-        params: [tanggal]
     })
 
     res.send({
@@ -128,7 +84,7 @@ router.post('/load', async (req, res, next) => {
     } = req.body
 
     const data = await dbQueryOne({
-        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%Y-%m-%d %H:%i:%S') as permulai, DATE_FORMAT(perselesai, '%Y-%m-%d %H:%i:%S') as perselesai, DATE_FORMAT(perpengumuman, '%d %b %Y %H:%i') as perpengumuman, perstatus,perjumkabkediri, perjumkotkediri, perjumnganjuk
+        sql: `SELECT perid, pernama, DATE_FORMAT(permulai, '%Y-%m-%d %H:%i:%S') as permulai, DATE_FORMAT(perselesai, '%Y-%m-%d %H:%i:%S') as perselesai, perstatus,perjumkabkediri, perjumkotkediri, perjumnganjuk
                 FROM periode 
                 where perid = ?`,
         params: [perid]
@@ -147,7 +103,6 @@ router.post('/tambah', async (req, res, next) => {
         pernama,
         permulai,
         perselesai,
-        perpengumuman,
         perstatus,
         perjumkabkediri,
         perjumkotkediri,
@@ -175,7 +130,6 @@ router.post('/tambah', async (req, res, next) => {
             pernama,
             permulai,
             perselesai,
-            perpengumuman,
             perstatus,
             perjumkabkediri,
             perjumkotkediri,
@@ -196,7 +150,6 @@ router.post('/ubah', async (req, res, next) => {
         pernama,
         permulai,
         perselesai,
-        perpengumuman,
         perstatus,
         perjumkabkediri,
         perjumkotkediri,
@@ -219,12 +172,11 @@ router.post('/ubah', async (req, res, next) => {
     }
 
     const resUpdate = await dbExec({
-        sql: `update periode set pernama = ?, permulai = ?, perselesai = ?, perpengumuman = ?, perstatus = ?, perjumkabkediri = ?, perjumkotkediri = ?, perjumnganjuk = ? where perid = ?`,
+        sql: `update periode set pernama = ?, permulai = ?, perselesai = ?, perstatus = ?, perjumkabkediri = ?, perjumkotkediri = ?, perjumnganjuk = ? where perid = ?`,
         params: [
             pernama,
             permulai,
             perselesai,
-            perpengumuman,
             perstatus,
             perjumkabkediri,
             perjumkotkediri,
