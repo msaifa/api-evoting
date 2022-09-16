@@ -52,7 +52,8 @@ router.post('/tambah', async (req, res, next) => {
         adnama, 
         ademail, 
         adusername, 
-        adpassword
+        adpassword,
+        adstatus
     } = req.body
 
     //validasi email
@@ -89,7 +90,8 @@ router.post('/tambah', async (req, res, next) => {
             adnama, 
             ademail, 
             adusername, 
-            adpassword            
+            adpassword,
+            adstatus
         }
     })
 

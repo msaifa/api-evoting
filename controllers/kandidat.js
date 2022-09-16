@@ -66,8 +66,8 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         sql: `SELECT sum(votjumlah) as totalVote 
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
-                where perid = ? ${filterKota}`,
-        params: [perid]
+                where perid = ? and vottanggal < (? - interval 1 day) ${filterKota}`,
+        params: [perid, tanggal]
     })
 
     const getKandidat = await dbQueryAll({
@@ -76,11 +76,11 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ? ${filterKota}
+            where v.perid = ? and vottanggal < (? - interval 1 day) ${filterKota} 
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
-        params: [perid]
+        params: [perid,tanggal]
     })    
 
     // konversi tipe data
@@ -267,8 +267,8 @@ router.post('/get-all', async (req, res, next) => {
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ? `,
-            params: [currentPeriodeID, dataKandidat[i].kanid]
+                    where perid = ? and kanid = ? and vottanggal < (? - interval 1 day)`,
+            params: [currentPeriodeID, dataKandidat[i].kanid, tanggal]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
     }
@@ -558,7 +558,7 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
     } = req.body
 
     let perid
-    let limit = ' limit 5'
+    let limit = ''
 
     if (periode == 0 || !periode){
         perid = await getPeriodeByDate(tanggal)
@@ -594,8 +594,8 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
             sql: `SELECT sum(votjumlah) as totalVote 
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and kanasalkota = ?`,
-            params: [perid, kota]
+                    where perid = ? and kanasalkota = ? and vottanggal < (? - interval 1 day)`,
+            params: [perid, kota, tanggal]
         })
     
         let getKandidat = await dbQueryAll({
@@ -603,11 +603,11 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
                 left join periode p on p.perid = v.perid 
-                where v.perid = ? and kanasalkota = ?
+                where v.perid = ? and kanasalkota = ? and vottanggal < (? - interval 1 day)
                 group by v.kanid, v.perid
                 order by total desc 
                 ${limit}`,
-            params: [perid, kota]
+            params: [perid, kota, tanggal]
         })
 
         // konversi tipe data
