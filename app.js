@@ -43,8 +43,8 @@ app.use((req, res, next) => {
   } else {
     res.send({
       status: 401,
-      // message: "UnAuthorized",
-      message: "Silakan melakukan upgrade aplikasi terlebih dahulu",
+      message: "UnAuthorized",
+      // message: "Silakan melakukan upgrade aplikasi terlebih dahulu",
     })
   }
 })
