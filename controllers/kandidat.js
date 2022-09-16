@@ -1,5 +1,6 @@
 import express from 'express'
 import { dbExec, dbInsert, dbQueryAll, dbQueryOne } from '../config/db';
+import moment from 'moment'
 
 var router = express.Router();
 let sql = "" ;
@@ -66,8 +67,8 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         sql: `SELECT sum(votjumlah) as totalVote 
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
-                where perid = ? and vottanggal < (? - interval 1 day) ${filterKota}`,
-        params: [perid, tanggal]
+                where perid = ? and ((vottanggal < ? and usid > 0) || usid = -1) ${filterKota}`,
+        params: [perid, tanggal.split(" ")[0]]
     })
 
     const getKandidat = await dbQueryAll({
@@ -76,11 +77,11 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ? and vottanggal < (? - interval 1 day) ${filterKota} 
+            where v.perid = ? and ((vottanggal < ? and usid > 0) || usid = -1) ${filterKota} 
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
-        params: [perid,tanggal]
+        params: [perid,tanggal.split(" ")[0]]
     })    
 
     // konversi tipe data
@@ -104,6 +105,18 @@ router.post('/pilih', async (req, res, next) => {
         usid,
         deviceid
     } = req.body
+
+    var compareDate = moment(vottanggal.split(" ")[1], "HH:mm:ss");
+    var startDate   = moment("09:00:00", "HH:mm:ss");
+    var endDate     = moment("15:00:00", "HH:mm:ss");
+
+    if (!compareDate.isBetween(startDate, endDate)){
+        res.send({
+            status: 400,
+            message: "Anda melakukan vote diluar jam yang telah ditentukan. Silakan melakukan vote online pada jam 09.00 - 15.00"
+        })
+        return;
+    }
 
     const perid = await getPeriodeByDate(vottanggal)
 
@@ -267,8 +280,8 @@ router.post('/get-all', async (req, res, next) => {
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ? and vottanggal < (? - interval 1 day)`,
-            params: [currentPeriodeID, dataKandidat[i].kanid, tanggal]
+                    where perid = ? and kanid = ? and ((vottanggal < ? and usid > 0) || usid = -1)`,
+            params: [currentPeriodeID, dataKandidat[i].kanid, tanggal.split(" ")[0]]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
     }
@@ -594,8 +607,8 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
             sql: `SELECT sum(votjumlah) as totalVote 
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and kanasalkota = ? and vottanggal < (? - interval 1 day)`,
-            params: [perid, kota, tanggal]
+                    where perid = ? and kanasalkota = ? and ((vottanggal < ? and usid > 0) || usid = -1)`,
+            params: [perid, kota, tanggal.split(" ")[0]]
         })
     
         let getKandidat = await dbQueryAll({
@@ -603,11 +616,11 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
                 left join periode p on p.perid = v.perid 
-                where v.perid = ? and kanasalkota = ? and vottanggal < (? - interval 1 day)
+                where v.perid = ? and kanasalkota = ? and ((vottanggal < ? and usid > 0) || usid = -1)
                 group by v.kanid, v.perid
                 order by total desc 
                 ${limit}`,
-            params: [perid, kota, tanggal]
+            params: [perid, kota, tanggal.split(" ")[0]]
         })
 
         // konversi tipe data
