@@ -62,13 +62,20 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         return;
     }
 
+    let tanggalFilter;
+    if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
+        tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+    } else {
+        tanggalFilter = tanggal.split(" ")[0]
+    }
+
     const filterKota = kota ? ` and kanasalkota = '${kota}'`:''
     const {totalVote} = await dbQueryOne({
         sql: `SELECT sum(votjumlah) as totalVote 
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
-                where perid = ? and ((vottanggal < ? and usid > 0) || usid = -1) ${filterKota}`,
-        params: [perid, tanggal.split(" ")[0]]
+                where perid = ? and vottanggal < ? ${filterKota}`,
+        params: [perid, tanggalFilter]
     })
 
     const getKandidat = await dbQueryAll({
@@ -77,11 +84,11 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ? and ((vottanggal < ? and usid > 0) || usid = -1) ${filterKota} 
+            where v.perid = ? and vottanggal < ? ${filterKota} 
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
-        params: [perid,tanggal.split(" ")[0]]
+        params: [perid,tanggalFilter]
     })    
 
     // konversi tipe data
@@ -113,7 +120,7 @@ router.post('/pilih', async (req, res, next) => {
     if (!compareDate.isBetween(startDate, endDate)){
         res.send({
             status: 400,
-            message: "Anda melakukan vote diluar jam yang telah ditentukan. Silakan melakukan vote online pada jam 09.00 - 15.00"
+            message: "Vote Online hanya dilakukan jam 09.00 - 15.00"
         })
         return;
     }
@@ -275,13 +282,20 @@ router.post('/get-all', async (req, res, next) => {
         })
     }
 
+    let tanggalFilter;
+    if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
+        tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+    } else {
+        tanggalFilter = tanggal.split(" ")[0]
+    }
+
     // mengambil jumlah suara pada periode saat ini
     for (let i = 0 ; i < dataKandidat.length ; i++){
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ? and ((vottanggal < ? and usid > 0) || usid = -1)`,
-            params: [currentPeriodeID, dataKandidat[i].kanid, tanggal.split(" ")[0]]
+                    where perid = ? and kanid = ? and vottanggal < ?`,
+            params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
     }
@@ -600,6 +614,13 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
 
     let mainData = []
 
+    let tanggalFilter;
+    if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
+        tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+    } else {
+        tanggalFilter = tanggal.split(" ")[0]
+    }
+
     for(let i = 0 ; i < getKota.length ; i++){
         let kota = getKota[i].kanasalkota
         
@@ -607,8 +628,8 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
             sql: `SELECT sum(votjumlah) as totalVote 
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and kanasalkota = ? and ((vottanggal < ? and usid > 0) || usid = -1)`,
-            params: [perid, kota, tanggal.split(" ")[0]]
+                    where perid = ? and kanasalkota = ? and vottanggal < ?`,
+            params: [perid, kota, tanggalFilter]
         })
     
         let getKandidat = await dbQueryAll({
@@ -616,11 +637,11 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
                 left join periode p on p.perid = v.perid 
-                where v.perid = ? and kanasalkota = ? and ((vottanggal < ? and usid > 0) || usid = -1)
+                where v.perid = ? and kanasalkota = ? and vottanggal < ?
                 group by v.kanid, v.perid
                 order by total desc 
                 ${limit}`,
-            params: [perid, kota, tanggal.split(" ")[0]]
+            params: [perid, kota, tanggalFilter]
         })
 
         // konversi tipe data
