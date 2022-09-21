@@ -673,6 +673,18 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
         }
     }
 
+    kotaKediri.sort(function(a, b) {
+        return b['total'] - a['total'];
+    });
+
+    kabKediri.sort(function(a, b) {
+        return b['total'] - a['total'];
+    });
+
+    kabNganjuk.sort(function(a, b) {
+        return b['total'] - a['total'];
+    });
+
     let mainData = [
         {
             asal: 'Kota Kediri',
