@@ -32,6 +32,132 @@ const compare = ( a, b ) => {
     return 0;
 }
 
+const getAllKandidat = async ({pages, tanggal, limit, periode}) => {
+    let dataKandidat = [];
+    
+    if (pages == 0 || !pages || pages == ""){
+        return {
+            status: 400,
+            message:"Halaman yang dimasukkan tidak valid."
+        }
+    }
+
+    let currentPeriodeID
+
+    if (periode == 0 || !periode){
+        currentPeriodeID = await getPeriodeByDate(tanggal)
+    } else {
+        currentPeriodeID = periode
+    }
+
+    if (!currentPeriodeID){
+        return {
+            status: 400,
+            message:"Tidak ada periode aktif untuk saat ini."
+        }
+    }
+
+    const prevPeriode = await dbQueryOne({
+        sql: `select perid, perjumkabkediri, perjumkotkediri, perjumnganjuk  
+                from periode p 
+                where perselesai < (select permulai from periode where perid = ?)
+                order by perselesai desc 
+                limit 1`,
+        params: [currentPeriodeID]
+    })
+
+    if (!currentPeriodeID && !prevPeriode){
+        return {
+            status: 400,
+            message:"Tidak ada periode aktif dan tidak ada kandidat tersedia."
+        }
+    } else if (!prevPeriode){
+        // jika belum pernah dilakukan voting, maka ambil semua
+        dataKandidat = await dbQueryAll({
+            sql: `SELECT kanid,kannama,kanttl,kanalamat,kanagama,kanpekerjaan,kanhp,kanemail,kanfoto,kanasalkota 
+                    from kandidat order by kanid asc limit ? offset ?`,
+            params: [limit, (pages-1)*limit]
+        })
+    } else {
+        // jika sudah pernah melakukan voting, mengambil kandidat dari hasil voting sebelumnya
+        // ambil data dari kota kab kediri
+        const prevperid = prevPeriode.perid
+        dataKandidat = await dbQueryAll({
+            sql: `select total,kanid, kannama, kanttl, kanalamat, kanagama, kanpekerjaan, kanhp,kanfoto, kanasalkota,perid from (
+                    (
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                        from voting v
+                        left join kandidat k on k.kanid = v.kanid 
+                        where kanasalkota = 'Kota Kediri' and perid = ?
+                        group by v.kanid, v.perid
+                        order by total desc
+                        limit ?
+                    )
+                    UNION 
+                    (
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                        from voting v
+                        left join kandidat k on k.kanid = v.kanid 
+                        where kanasalkota = 'Kab. Kediri' and perid = ?
+                        group by v.kanid, v.perid
+                        order by total desc
+                        limit ?
+                    )
+                    UNION 
+                    (
+                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
+                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
+                        from voting v
+                        left join kandidat k on k.kanid = v.kanid 
+                        where kanasalkota = 'Kab. Nganjuk' and perid = ?
+                        group by v.kanid, v.perid
+                        order by total desc
+                        limit ?
+                    )
+                ) as a 
+                limit ? offset ?`,
+            params: [
+                prevperid,
+                prevPeriode.perjumkotkediri,
+                prevperid,
+                prevPeriode.perjumkabkediri,
+                prevperid,
+                prevPeriode.perjumnganjuk,
+                limit, 
+                (pages-1)*limit
+            ]
+        })
+    }
+
+    let tanggalFilter;
+    if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
+        tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+    } else {
+        tanggalFilter = tanggal.split(" ")[0]
+    }
+
+    // mengambil jumlah suara pada periode saat ini
+    for (let i = 0 ; i < dataKandidat.length ; i++){
+        const totalPerKandidat = await dbQueryOne({
+            sql: `select sum(votjumlah) as total
+                    from voting v
+                    where perid = ? and kanid = ? and vottanggal < ?`,
+            params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter]
+        }).catch(e => console.log(e))
+        dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
+    }
+
+    return {
+        status: 200,
+        message:"Berhasil mengambil data kandidat.",
+        data: dataKandidat,
+        perid: currentPeriodeID
+        // prevPeriode
+    }    
+}
+
 router.post('/suara-terbanyak', async (req, res, next) => {
 
     const { 
@@ -120,7 +246,7 @@ router.post('/pilih', async (req, res, next) => {
     if (!compareDate.isBetween(startDate, endDate)){
         res.send({
             status: 400,
-            message: "Vote Online hanya dilakukan jam 09.00 - 15.00"
+            message: "Anda melakukan vote diluar jam yang telah ditentukan. Silakan melakukan vote online pada jam 09.00-15.00"
         })
         return;
     }
@@ -195,117 +321,14 @@ router.post('/get-all', async (req, res, next) => {
         pages,
         tanggal
     } = req.body
-    const limit = 15;
-    let dataKandidat = [];
+
+    const dataAllKandidat = await getAllKandidat({
+        pages,
+        tanggal,
+        limit: 15
+    });
     
-    if (pages == 0 || !pages || pages == ""){
-        res.send({
-            status: 400,
-            message:"Halaman yang dimasukkan tidak valid."
-        })
-        return;
-    }
-
-    const currentPeriodeID = await getPeriodeByDate(tanggal)
-    const prevPeriode = await dbQueryOne({
-        sql: `select perid, perjumkabkediri, perjumkotkediri, perjumnganjuk  
-                from periode p 
-                where perselesai < (select permulai from periode where perid = ?)
-                order by perselesai desc 
-                limit 1`,
-        params: [currentPeriodeID]
-    })
-
-    if (!currentPeriodeID && !prevPeriode){
-        res.send({
-            status: 400,
-            message:"Tidak ada periode aktif dan tidak ada kandidat tersedia."
-        })
-        return;
-    } else if (!prevPeriode){
-        // jika belum pernah dilakukan voting, maka ambil semua
-        dataKandidat = await dbQueryAll({
-            sql: `SELECT kanid,kannama,kanttl,kanalamat,kanagama,kanpekerjaan,kanhp,kanemail,kanfoto,kanasalkota 
-                    from kandidat order by kanid asc limit ? offset ?`,
-            params: [limit, (pages-1)*limit]
-        })
-    } else {
-        // jika sudah pernah melakukan voting, mengambil kandidat dari hasil voting sebelumnya
-        // ambil data dari kota kab kediri
-        const prevperid = prevPeriode.perid
-        dataKandidat = await dbQueryAll({
-            sql: `select total,kanid, kannama, kanttl, kanalamat, kanagama, kanpekerjaan, kanhp,kanfoto, kanasalkota,perid from (
-                    (
-                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
-                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
-                        from voting v
-                        left join kandidat k on k.kanid = v.kanid 
-                        where kanasalkota = 'Kota Kediri' and perid = ?
-                        group by v.kanid, v.perid
-                        order by total desc
-                        limit ?
-                    )
-                    UNION 
-                    (
-                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
-                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
-                        from voting v
-                        left join kandidat k on k.kanid = v.kanid 
-                        where kanasalkota = 'Kab. Kediri' and perid = ?
-                        group by v.kanid, v.perid
-                        order by total desc
-                        limit ?
-                    )
-                    UNION 
-                    (
-                        SELECT sum(votjumlah) as total, v.kanid, k.kannama, k.kanttl, k.kanalamat, 
-                        k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid
-                        from voting v
-                        left join kandidat k on k.kanid = v.kanid 
-                        where kanasalkota = 'Kab. Nganjuk' and perid = ?
-                        group by v.kanid, v.perid
-                        order by total desc
-                        limit ?
-                    )
-                ) as a 
-                limit ? offset ?`,
-            params: [
-                prevperid,
-                prevPeriode.perjumkotkediri,
-                prevperid,
-                prevPeriode.perjumkabkediri,
-                prevperid,
-                prevPeriode.perjumnganjuk,
-                limit, 
-                (pages-1)*limit
-            ]
-        })
-    }
-
-    let tanggalFilter;
-    if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
-        tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
-    } else {
-        tanggalFilter = tanggal.split(" ")[0]
-    }
-
-    // mengambil jumlah suara pada periode saat ini
-    for (let i = 0 ; i < dataKandidat.length ; i++){
-        const totalPerKandidat = await dbQueryOne({
-            sql: `select sum(votjumlah) as total
-                    from voting v
-                    where perid = ? and kanid = ? and vottanggal < ?`,
-            params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter]
-        }).catch(e => console.log(e))
-        dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
-    }
-
-    res.send({
-        status: 200,
-        message:"Berhasil mengambil data kandidat.",
-        data: dataKandidat,
-        // prevPeriode
-    })
+    res.send(dataAllKandidat)
     return;
 });
 
@@ -580,39 +603,22 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
 
     const { 
         tanggal,
-        allData,
         periode
     } = req.body
 
-    let perid
-    let limit = ''
+    const {status, message, data, perid} = await getAllKandidat({
+        pages: 1,
+        tanggal,
+        limit: 1000,
+        periode
+    });
 
-    if (periode == 0 || !periode){
-        perid = await getPeriodeByDate(tanggal)
-    } else {
-        perid = periode
-    }
-
-    if (allData === true){
-        limit = ''
-    }
-
-    if (!perid){
+    if (status != 200){
         res.send({
-            status: 400,
-            message:"Tidak ada periode aktif untuk saat ini."
+            status,message
         })
         return;
     }
-
-    const getKota = await dbQueryAll({
-        sql: `select distinct kanasalkota 
-                from kandidat k 
-                order by kanasalkota desc`,
-        params: []
-    })
-
-    let mainData = []
 
     let tanggalFilter;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
@@ -621,39 +627,66 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
         tanggalFilter = tanggal.split(" ")[0]
     }
 
-    for(let i = 0 ; i < getKota.length ; i++){
-        let kota = getKota[i].kanasalkota
-        
-        let {totalVote} = await dbQueryOne({
-            sql: `SELECT sum(votjumlah) as totalVote 
+    let dataTotalPerKota = await dbQueryOne({
+        sql: `select 
+                (
+                    SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and kanasalkota = ? and vottanggal < ?`,
-            params: [perid, kota, tanggalFilter]
-        })
-    
-        let getKandidat = await dbQueryAll({
-            sql: `SELECT sum(votjumlah) as total, (${totalVote}) as totalkeseluruhan, v.kanid, k.kannama, kanfoto
-                from voting v
-                left join kandidat k on k.kanid = v.kanid
-                left join periode p on p.perid = v.perid 
-                where v.perid = ? and kanasalkota = ? and vottanggal < ?
-                group by v.kanid, v.perid
-                order by total desc 
-                ${limit}`,
-            params: [perid, kota, tanggalFilter]
-        })
+                    where perid = ? and vottanggal < ? and kanasalkota='Kab. Kediri'
+                ) as kabKediri,
+                (
+                    SELECT sum(votjumlah) as total
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid
+                    where perid = ? and vottanggal < ? and kanasalkota='Kota Kediri'
+                ) as kotaKediri,
+                (
+                    SELECT sum(votjumlah) as total
+                    from voting v
+                    left join kandidat k on k.kanid = v.kanid
+                    where perid = ? and vottanggal < ? and kanasalkota='Kab. Nganjuk'
+                ) as kabNganjuk`,
+        params: [perid, tanggalFilter,perid, tanggalFilter,perid, tanggalFilter]
+    })
 
-        // konversi tipe data
-        for(let j = 0 ; j < getKandidat.length ; j++){
-            getKandidat[j]['total'] = parseInt(getKandidat[j]['total'])
+    let kotaKediri = []
+    let kabKediri = []
+    let kabNganjuk = []
+
+    for(let i = 0 ; i < data.length ; i++){
+        if (data[i].kanasalkota == "Kota Kediri"){
+            kotaKediri.push({
+                ...data[i],
+                totalkeseluruhan: parseInt(dataTotalPerKota.kotaKediri??0)
+            })
+        } else if (data[i].kanasalkota == "Kab. Nganjuk"){
+            kabNganjuk.push({
+                ...data[i],
+                totalkeseluruhan: parseInt(dataTotalPerKota.kabNganjuk??0)
+            })
+        } else if (data[i].kanasalkota == "Kab. Kediri"){
+            kabKediri.push({
+                ...data[i],
+                totalkeseluruhan: parseInt(dataTotalPerKota.kabKediri??0)
+            })
         }
-
-        mainData.push({
-            asal: kota,
-            data: getKandidat
-        })
     }
+
+    let mainData = [
+        {
+            asal: 'Kota Kediri',
+            data: kotaKediri
+        },
+        {
+            asal: 'Kab. Kediri',
+            data: kabKediri
+        },
+        {
+            asal: 'Kab. Nganjuk',
+            data: kabNganjuk
+        },
+    ]
 
     res.send({
         status: 200,
