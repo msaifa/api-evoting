@@ -132,6 +132,7 @@ const getAllKandidat = async ({pages, tanggal, limit, periode}) => {
     }
 
     let tanggalFilter;
+    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
     } else {
@@ -143,8 +144,8 @@ const getAllKandidat = async ({pages, tanggal, limit, periode}) => {
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ? and (vottanggal < ? or usid = -1)`,
-            params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter]
+                    where perid = ? and kanid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?))`,
+            params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter, tanggalFilter2]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
     }
@@ -189,6 +190,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     }
 
     let tanggalFilter;
+    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
     } else {
@@ -200,8 +202,8 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         sql: `SELECT sum(votjumlah) as totalVote 
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
-                where perid = ? and (vottanggal < ? or usid = -1) ${filterKota}`,
-        params: [perid, tanggalFilter]
+                where perid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?)) ${filterKota}`,
+        params: [perid, tanggalFilter, tanggalFilter2]
     })
 
     const getKandidat = await dbQueryAll({
@@ -210,11 +212,11 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ? and (vottanggal < ? or usid = -1) ${filterKota} 
+            where v.perid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?)) ${filterKota} 
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
-        params: [perid,tanggalFilter]
+        params: [perid, tanggalFilter, tanggalFilter2]
     })    
 
     // konversi tipe data
@@ -621,6 +623,7 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
     }
 
     let tanggalFilter;
+    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
     } else {
@@ -633,21 +636,21 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kab. Kediri'
+                    where perid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?)) and kanasalkota='Kab. Kediri'
                 ) as kabKediri,
                 (
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kota Kediri'
+                    where perid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?)) and kanasalkota='Kota Kediri'
                 ) as kotaKediri,
                 (
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kab. Nganjuk'
+                    where perid = ? and (vottanggal < ? or (usid = -1 and vottanggal < ?)) and kanasalkota='Kab. Nganjuk'
                 ) as kabNganjuk`,
-        params: [perid, tanggalFilter,perid, tanggalFilter,perid, tanggalFilter]
+        params: [perid, tanggalFilter, tanggalFilter2,perid, tanggalFilter, tanggalFilter2,perid, tanggalFilter, tanggalFilter2]
     })
 
     let kotaKediri = []
