@@ -143,7 +143,7 @@ const getAllKandidat = async ({pages, tanggal, limit, periode}) => {
         const totalPerKandidat = await dbQueryOne({
             sql: `select sum(votjumlah) as total
                     from voting v
-                    where perid = ? and kanid = ? and vottanggal < ?`,
+                    where perid = ? and kanid = ? and (vottanggal < ? or usid = -1)`,
             params: [currentPeriodeID, dataKandidat[i].kanid, tanggalFilter]
         }).catch(e => console.log(e))
         dataKandidat[i]['total'] = totalPerKandidat['total'] ? parseInt(totalPerKandidat['total']) : 0
@@ -200,7 +200,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
         sql: `SELECT sum(votjumlah) as totalVote 
                 from voting v
                 left join kandidat k on k.kanid = v.kanid
-                where perid = ? and vottanggal < ? ${filterKota}`,
+                where perid = ? and (vottanggal < ? or usid = -1) ${filterKota}`,
         params: [perid, tanggalFilter]
     })
 
@@ -210,7 +210,7 @@ router.post('/suara-terbanyak', async (req, res, next) => {
             from voting v
             left join kandidat k on k.kanid = v.kanid
             left join periode p on p.perid = v.perid 
-            where v.perid = ? and vottanggal < ? ${filterKota} 
+            where v.perid = ? and (vottanggal < ? or usid = -1) ${filterKota} 
             group by v.kanid, v.perid
             order by total desc 
             ${limit}`,
@@ -633,19 +633,19 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and vottanggal < ? and kanasalkota='Kab. Kediri'
+                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kab. Kediri'
                 ) as kabKediri,
                 (
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and vottanggal < ? and kanasalkota='Kota Kediri'
+                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kota Kediri'
                 ) as kotaKediri,
                 (
                     SELECT sum(votjumlah) as total
                     from voting v
                     left join kandidat k on k.kanid = v.kanid
-                    where perid = ? and vottanggal < ? and kanasalkota='Kab. Nganjuk'
+                    where perid = ? and (vottanggal < ? or usid = -1) and kanasalkota='Kab. Nganjuk'
                 ) as kabNganjuk`,
         params: [perid, tanggalFilter,perid, tanggalFilter,perid, tanggalFilter]
     })
