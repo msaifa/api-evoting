@@ -132,11 +132,13 @@ const getAllKandidat = async ({pages, tanggal, limit, periode}) => {
     }
 
     let tanggalFilter;
-    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
+    let tanggalFilter2;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 00:00:00` ;
     } else {
         tanggalFilter = tanggal.split(" ")[0]
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     }
 
     // mengambil jumlah suara pada periode saat ini
@@ -190,11 +192,13 @@ router.post('/suara-terbanyak', async (req, res, next) => {
     }
 
     let tanggalFilter;
-    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
+    let tanggalFilter2;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 00:00:00` ;
     } else {
         tanggalFilter = tanggal.split(" ")[0]
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     }
 
     const filterKota = kota ? ` and kanasalkota = '${kota}'`:''
@@ -623,11 +627,13 @@ router.post('/suara-terbanyak-kota', async (req, res, next) => {
     }
 
     let tanggalFilter;
-    let tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
+    let tanggalFilter2;
     if (moment(tanggal.split(" ")[1], 'HH:mm:ss').isBefore(moment('09:00:00', 'HH:mm:ss'))){
         tanggalFilter = moment(tanggal.split(" ")[0]).subtract(1, "days").format("YYYY-MM-DD");
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 00:00:00` ;
     } else {
         tanggalFilter = tanggal.split(" ")[0]
+        tanggalFilter2 = `${tanggal.split(" ")[0]} 09:00:00` ;
     }
 
     let dataTotalPerKota = await dbQueryOne({

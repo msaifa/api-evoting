@@ -21,7 +21,11 @@ const decryptJWT = (data) => {
 
 const validateRequest = (headers, url) => {
   // return true 
-  if (url == "/admin-auth/create-auth" && headers.xauth == masterKey){
+  var compareDate = moment.unix(headers.xtime.slice(0, -3), 'X')
+  var startDate   = moment().subtract(1, "days");
+  var endDate     = moment().add(1, "days");
+
+  if (headers.xauth == masterKey && compareDate.isBetween(startDate, endDate)){
     return true
   } else if (headers['x-token']){
     const tokenReq = headers['x-token']
