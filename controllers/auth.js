@@ -42,7 +42,7 @@ router.post('/login', async (req, res, next) => {
         usnohp, 
         uspassword
     } = req.body
-
+console.log(usnohp, uspassword)
     const validateLogin = await dbQueryOne({
         sql: `SELECT usid, usnama, usemail, usnohp, usfoto, usstatus FROM user WHERE usnohp = ? and uspassword = ?`,
         params: [usnohp, uspassword]
