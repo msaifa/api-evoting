@@ -1,4 +1,5 @@
 import express from 'express'
+import moment from 'moment';
 import { dbExec, dbInsert, dbQueryAll, dbQueryOne } from '../config/db';
 
 var router = express.Router();
@@ -187,6 +188,26 @@ router.post('/hapus', async (req, res, next) => {
         message:"Berhasil menghapus admin."
     })
     return;
+});
+
+router.post('/test-datetime', async (req, res, next) => {
+
+	const { 
+        
+	} = req.body
+
+	const result = await dbQueryOne({
+		sql: `select DATE_FORMAT(now(), '%d %b %Y %H:%i') as tanggal`,
+		params: []
+	}).catch(() => {})
+
+	res.send({
+		status: result ? 200 : 400,
+		message:"Berhasil menghapus data suara.",
+        data: result,
+        data2: moment().format('YYYY-MM-DD HH:mm:ss')
+	})
+	return;
 });
 
 module.exports = router;
