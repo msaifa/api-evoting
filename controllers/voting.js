@@ -44,7 +44,7 @@ router.post('/get-all-manual', async (req, res, next) => {
 	}
 
 	const getKandidat = await dbQueryAll({
-		sql: `SELECT votid, v.kanid, k.kannama, k.kanttl, k.kanalamat, DATE_FORMAT(vottanggal, '%d %b %Y %H:%i') as vottanggal, votjumlah, vottanggal as vottanggal2
+		sql: `SELECT votid, v.kanid, k.kannama, k.kanttl, k.kanalamat, DATE_FORMAT(vottanggal, '%d %b %Y %H:%i') as vottanggal, votjumlah, vottanggal as vottanggal2, 
 			k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama,
 			u.usnama, votdeviceid
 			from voting v
