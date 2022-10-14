@@ -23,10 +23,10 @@ const validateRequest = (headers, url) => {
   // return true 
   
   if (headers.xauth){
+    var compareDate = moment.unix(headers.xtime.slice(0, -3), 'X')
+    var startDate   = moment().subtract(1, "days");
+    var endDate     = moment().add(1, "days");
     if (headers.xauth == masterKey && compareDate.isBetween(startDate, endDate)){
-      var compareDate = moment.unix(headers.xtime.slice(0, -3), 'X')
-      var startDate   = moment().subtract(1, "days");
-      var endDate     = moment().add(1, "days");
       return true
     }
   } else if (headers['x-token']){
