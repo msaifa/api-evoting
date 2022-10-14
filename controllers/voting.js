@@ -44,7 +44,7 @@ router.post('/get-all-manual', async (req, res, next) => {
 	}
 
 	const getKandidat = await dbQueryAll({
-		sql: `SELECT votid, v.kanid, k.kannama, k.kanttl, k.kanalamat, DATE_FORMAT(vottanggal, '%d %b %Y %H:%i') as vottanggal, votjumlah, 
+		sql: `SELECT votid, v.kanid, k.kannama, k.kanttl, k.kanalamat, DATE_FORMAT(vottanggal, '%d %b %Y %H:%i') as vottanggal, votjumlah, vottanggal as vottanggal2
 			k.kanagama, k.kanpekerjaan, k.kanhp, k.kanfoto, k.kanasalkota, v.perid, p.pernama,
 			u.usnama, votdeviceid
 			from voting v
@@ -52,7 +52,7 @@ router.post('/get-all-manual', async (req, res, next) => {
 			left join periode p on p.perid = v.perid 
 			left join user u on u.usid = v.usid
 			where v.perid = ? and v.usid = -1
-			order by vottanggal desc`,
+			order by vottanggal2 desc`,
 		params: [perid]
 	}).catch(() => {})
 
